@@ -1,5 +1,21 @@
 
-<div class="min-h-screen p-4 md:p-8 flex flex-col items-center">
+<div class="min-h-screen p-4 md:p-8 flex flex-col items-center relative">
+  <!-- TOAST NOTIFICATION -->
+  @if (toast().visible) {
+    <div class="fixed top-6 z-[100] flex justify-center w-full px-4 pointer-events-none">
+      <div class="glass-panel px-6 py-3 rounded-2xl flex items-center gap-3 shadow-2xl animate-bounce-short border border-white/20"
+           [class.text-cyan-400]="toast().type === 'success'"
+           [class.text-red-400]="toast().type === 'error'">
+        @if (toast().type === 'success') {
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+        } @else {
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        }
+        <span class="font-bold text-sm tracking-wide">{{ toast().message }}</span>
+      </div>
+    </div>
+  }
+
   <!-- Header Floating -->
   <header class="w-full max-w-6xl mb-12 flex justify-between items-center floating">
     <div class="flex items-center gap-3">
@@ -18,7 +34,7 @@
     
     <div class="flex items-center gap-4">
       @if (videoUrl()) {
-        <button (click)="reset()" 
+        <button (click)="confirmReset()" 
                 class="group flex items-center gap-2 px-6 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm font-bold rounded-2xl border border-red-500/20 transition-all active:scale-95 shadow-lg shadow-red-500/5">
           <svg class="w-4 h-4 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -35,11 +51,8 @@
   </header>
 
   <main class="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-8 perspective-1000">
-    
-    <!-- LEFT COLUMN: Video & Controls -->
+    <!-- LEFT COLUMN -->
     <div class="lg:col-span-5 flex flex-col gap-6">
-      
-      <!-- Video Input / Player Card -->
       <div class="glass-panel rounded-3xl p-6 tilt-card">
         @if (!videoUrl()) {
           <div class="border-2 border-dashed border-white/10 rounded-2xl h-64 flex flex-col items-center justify-center gap-4 bg-white/5 hover:bg-white/10 transition-colors group cursor-pointer relative">
@@ -49,7 +62,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
               </svg>
             </div>
-            <p class="text-gray-400 font-medium text-center px-4">Carica il tuo video<br><span class="text-xs text-gray-500">(formati MP4, WebM supportati)</span></p>
+            <p class="text-gray-400 font-medium text-center px-4">Carica il tuo video<br><span class="text-xs text-gray-500">(MP4, WebM supportati)</span></p>
           </div>
         } @else {
           <div class="relative rounded-2xl overflow-hidden shadow-2xl bg-black">
@@ -60,7 +73,6 @@
                    controls>
             </video>
           </div>
-          
           <div class="mt-4 flex flex-col gap-2">
             <div class="flex justify-between text-xs text-indigo-300 font-mono">
               <span>{{ formatTime(currentTime()) }}</span>
@@ -73,13 +85,11 @@
         }
       </div>
 
-      <!-- Settings Card -->
       <div class="glass-panel rounded-3xl p-6 flex flex-col gap-6 tilt-card">
         <div class="flex items-center justify-between">
           <h3 class="text-lg font-semibold text-white/90">Configurazione</h3>
           <span class="text-[10px] text-indigo-400 font-mono">Partenza: 0.00s</span>
         </div>
-        
         <div class="space-y-4">
           <div>
             <label class="block text-sm text-gray-400 mb-2">Intervallo Estrazione (ms)</label>
@@ -91,16 +101,12 @@
               </span>
             </div>
           </div>
-
           <button (click)="startExtraction()" 
                   [disabled]="!videoUrl() || isExtracting()"
                   class="w-full py-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-bold shadow-xl shadow-indigo-500/20 hover:translate-y-[-2px] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
             @if (isExtracting()) {
               <span class="flex items-center justify-center gap-2">
-                <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
+                <svg class="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                 Elaborazione...
               </span>
             } @else {
@@ -111,29 +117,24 @@
       </div>
     </div>
 
-    <!-- RIGHT COLUMN: Timeline & Frames -->
+    <!-- RIGHT COLUMN -->
     <div class="lg:col-span-7 flex flex-col gap-6 h-full">
-      
       <div class="glass-panel rounded-3xl p-6 flex-1 flex flex-col gap-6 overflow-hidden min-h-[500px]">
         <div class="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h3 class="text-xl font-bold text-white/90">Timeline Fotogrammi</h3>
             <p class="text-sm text-gray-400">Trovati {{ frames().length }} fotogrammi</p>
           </div>
-          
           <div class="flex gap-2">
             <button (click)="selectAll()" class="px-4 py-2 bg-white/5 hover:bg-white/10 text-xs rounded-xl transition-colors border border-white/5">Seleziona Tutto</button>
             <button (click)="selectNone()" class="px-4 py-2 bg-white/5 hover:bg-white/10 text-xs rounded-xl transition-colors border border-white/5">Deseleziona</button>
           </div>
         </div>
 
-        <!-- Frame Grid Scrollable -->
         <div class="flex-1 overflow-y-auto custom-scrollbar pr-2">
           @if (frames().length === 0) {
             <div class="h-full flex flex-col items-center justify-center text-gray-500 opacity-50">
-              <svg class="w-20 h-20 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
+              <svg class="w-20 h-20 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
               <p>Nessun fotogramma estratto</p>
             </div>
           } @else {
@@ -144,22 +145,15 @@
                      [class.border-white/5]="!frame.selected"
                      (click)="toggleSelect(frame.id)">
                   <img [src]="frame.dataUrl" class="w-full h-full object-cover transition-transform group-hover:scale-110" loading="lazy">
-                  
-                  <!-- Sequence Badge (UI Only - NOT Exported) - Removed # -->
                   <div class="absolute top-2 left-2 px-2.5 py-1 bg-indigo-600/90 backdrop-blur-md rounded-lg text-[10px] font-bold text-white shadow-lg border border-white/10">
                     {{ idx + 1 }}
                   </div>
-
-                  <!-- Overlay Info -->
                   <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
                     <span class="text-[10px] font-mono text-white/70">{{ frame.timestamp }}ms</span>
                   </div>
-
                   @if (frame.selected) {
-                    <div class="absolute top-2 right-2 w-6 h-6 bg-indigo-500 rounded-full flex items-center justify-center shadow-lg animate-in zoom-in duration-200">
-                      <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                      </svg>
+                    <div class="absolute top-2 right-2 w-6 h-6 bg-indigo-500 rounded-full flex items-center justify-center shadow-lg">
+                      <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
                     </div>
                   }
                 </div>
@@ -168,25 +162,16 @@
           }
         </div>
 
-        <!-- Export Actions -->
         <div class="pt-6 border-t border-white/10 grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <button (click)="downloadSelected('png')" 
-                  [disabled]="selectedCount() === 0"
-                  class="flex items-center justify-center gap-2 py-3 bg-white/5 hover:bg-white/10 rounded-2xl text-sm font-medium transition-all disabled:opacity-30">
+          <button (click)="downloadSelected('png')" [disabled]="selectedCount() === 0" class="flex items-center justify-center gap-2 py-3 bg-white/5 hover:bg-white/10 rounded-2xl text-sm font-medium transition-all disabled:opacity-30">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
             PNG ({{ selectedCount() }})
           </button>
-          
-          <button (click)="downloadSelected('jpg')" 
-                  [disabled]="selectedCount() === 0"
-                  class="flex items-center justify-center gap-2 py-3 bg-white/5 hover:bg-white/10 rounded-2xl text-sm font-medium transition-all disabled:opacity-30">
+          <button (click)="downloadSelected('jpg')" [disabled]="selectedCount() === 0" class="flex items-center justify-center gap-2 py-3 bg-white/5 hover:bg-white/10 rounded-2xl text-sm font-medium transition-all disabled:opacity-30">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
             JPG ({{ selectedCount() }})
           </button>
-          
-          <button (click)="downloadSpriteSheet()" 
-                  [disabled]="frames().length === 0"
-                  class="flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-cyan-600 to-indigo-600 rounded-2xl text-sm font-bold shadow-lg shadow-cyan-500/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-30">
+          <button (click)="downloadSpriteSheet()" [disabled]="frames().length === 0" class="flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-cyan-600 to-indigo-600 rounded-2xl text-sm font-bold shadow-lg shadow-cyan-500/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-30">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
             Sprite Sheet 128
           </button>
@@ -195,14 +180,28 @@
     </div>
   </main>
 
-  <!-- Mobile Info Overlay -->
-  <footer class="mt-12 text-center text-gray-500 text-xs">
-    <p>&copy; 2024 FrameFlow 3D • Privacy Oriented • Elaborazione Locale</p>
-  </footer>
+  <!-- CONFIRM RESET MODAL -->
+  @if (showConfirmReset()) {
+    <div class="fixed inset-0 bg-black/80 backdrop-blur-md z-[110] flex items-center justify-center p-6">
+      <div class="glass-panel p-8 rounded-3xl max-w-sm w-full text-center flex flex-col items-center gap-6 floating border border-red-500/20">
+        <div class="w-16 h-16 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        </div>
+        <div>
+          <h2 class="text-2xl font-bold text-white mb-2">Sei sicuro?</h2>
+          <p class="text-gray-400 text-sm">L'operazione di reset cancellerà il video caricato e tutti i fotogrammi estratti finora.</p>
+        </div>
+        <div class="flex gap-3 w-full">
+          <button (click)="showConfirmReset.set(false)" class="flex-1 py-3 px-4 bg-white/5 hover:bg-white/10 text-white rounded-xl text-sm font-semibold transition-all">Annulla</button>
+          <button (click)="executeReset()" class="flex-1 py-3 px-4 bg-red-500 hover:bg-red-600 text-white rounded-xl text-sm font-semibold shadow-lg shadow-red-500/20 transition-all">Conferma Reset</button>
+        </div>
+      </div>
+    </div>
+  }
 
-  <!-- Modal/Toast-like Loading -->
+  <!-- EXTRACTION LOADING MODAL -->
   @if (isExtracting()) {
-    <div class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-6">
+    <div class="fixed inset-0 bg-black/80 backdrop-blur-md z-[110] flex items-center justify-center p-6">
       <div class="glass-panel p-8 rounded-3xl max-w-sm w-full text-center flex flex-col items-center gap-6 floating">
         <div class="relative">
           <div class="w-20 h-20 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
@@ -211,10 +210,14 @@
           </div>
         </div>
         <div>
-          <h2 class="text-xl font-bold text-white mb-2">Analisi Video in Corso</h2>
+          <h2 class="text-xl font-bold text-white mb-2">Analisi Video</h2>
           <p class="text-gray-400 text-sm">Estrazione dei fotogrammi in corso, partendo dal momento zero.</p>
         </div>
       </div>
     </div>
   }
+
+  <footer class="mt-12 text-center text-gray-500 text-xs pb-8">
+    <p>&copy; 2024 FrameFlow 3D • Privacy Oriented • Elaborazione Locale</p>
+  </footer>
 </div>

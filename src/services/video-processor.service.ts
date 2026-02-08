@@ -20,7 +20,6 @@ export class VideoProcessorService {
       video.crossOrigin = 'anonymous';
       video.muted = true;
       video.playsInline = true;
-      // Force loading of enough data to render the first frame
       video.preload = 'auto';
 
       video.onloadedmetadata = async () => {
@@ -30,7 +29,7 @@ export class VideoProcessorService {
         const ctx = canvas.getContext('2d');
         
         if (!ctx) {
-          reject('Could not create canvas context');
+          reject('Impossibile creare il contesto canvas');
           return;
         }
 
@@ -40,16 +39,14 @@ export class VideoProcessorService {
         let currentTime = 0;
         const intervalSec = intervalMs / 1000;
 
-        // Loop through the video duration
         while (currentTime <= duration) {
           video.currentTime = currentTime;
           
           await new Promise(r => {
             const onSeeked = () => {
               video.removeEventListener('seeked', onSeeked);
-              // Small delay to ensure the frame is actually decoded and ready for drawImage
-              // This fixes the "empty first frame" issue in many browsers
-              setTimeout(r, 40);
+              // Tempo di attesa critico per evitare frame neri/vuoti iniziali
+              setTimeout(r, 60);
             };
             video.addEventListener('seeked', onSeeked);
           });
@@ -65,14 +62,13 @@ export class VideoProcessorService {
 
           currentTime += intervalSec;
           
-          // Safety break to prevent browser hang on extremely long videos
           if (frames.length > 1000) break; 
         }
 
         resolve(frames);
       };
 
-      video.onerror = () => reject('Error loading video');
+      video.onerror = () => reject('Errore nel caricamento del video');
     });
   }
 
@@ -89,7 +85,6 @@ export class VideoProcessorService {
     const ctx = canvas.getContext('2d');
     if (!ctx) return '';
 
-    // Transparent background
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     for (let i = 0; i < frames.length; i++) {
@@ -97,14 +92,13 @@ export class VideoProcessorService {
       const x = (i % cols) * frameSize;
       const y = Math.floor(i / cols) * frameSize;
       
-      // Calculate fit (contain) inside the 128x128 cell
       const ratio = Math.min(frameSize / img.width, frameSize / img.height);
       const nw = img.width * ratio;
       const nh = img.height * ratio;
       const ox = x + (frameSize - nw) / 2;
       const oy = y + (frameSize - nh) / 2;
       
-      // Drawing strictly the image, no text/numbers added here
+      // Solo immagine, nessun testo o numero aggiunto
       ctx.drawImage(img, ox, oy, nw, nh);
     }
 

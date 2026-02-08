@@ -3,6 +3,12 @@ import { Component, signal, computed, inject, ElementRef, ViewChild } from '@ang
 import { CommonModule } from '@angular/common';
 import { VideoProcessorService, ExtractedFrame } from './services/video-processor.service';
 
+interface Toast {
+  message: string;
+  type: 'success' | 'error';
+  visible: boolean;
+}
+
 @Component({
   selector: 'app-root',
   imports: [CommonModule],
@@ -15,13 +21,24 @@ export class AppComponent {
   videoUrl = signal<string | null>(null);
   isExtracting = signal<boolean>(false);
   frames = signal<ExtractedFrame[]>([]);
-  intervalMs = signal<number>(500); // Default 500ms
+  intervalMs = signal<number>(500);
   currentTime = signal<number>(0);
   duration = signal<number>(0);
   
+  // UI States
+  showConfirmReset = signal<boolean>(false);
+  toast = signal<Toast>({ message: '', type: 'success', visible: false });
+
   selectedCount = computed(() => this.frames().filter(f => f.selected).length);
   
   @ViewChild('videoPlayer') videoPlayer!: ElementRef<HTMLVideoElement>;
+
+  showToast(message: string, type: 'success' | 'error' = 'success') {
+    this.toast.set({ message, type, visible: true });
+    setTimeout(() => {
+      this.toast.update(t => ({ ...t, visible: false }));
+    }, 3000);
+  }
 
   handleFileUpload(event: Event) {
     const input = event.target as HTMLInputElement;
@@ -30,6 +47,7 @@ export class AppComponent {
       const url = URL.createObjectURL(file);
       this.videoUrl.set(url);
       this.frames.set([]);
+      this.showToast('Video caricato con successo!');
     }
   }
 
@@ -54,8 +72,9 @@ export class AppComponent {
     try {
       const result = await this.videoProcessor.extractFrames(this.videoUrl()!, this.intervalMs());
       this.frames.set(result);
+      this.showToast(`${result.length} fotogrammi estratti!`);
     } catch (err) {
-      console.error(err);
+      this.showToast('Errore durante l\'estrazione', 'error');
     } finally {
       this.isExtracting.set(false);
     }
@@ -75,7 +94,11 @@ export class AppComponent {
     this.frames.update(current => current.map(f => ({ ...f, selected: false })));
   }
 
-  reset() {
+  confirmReset() {
+    this.showConfirmReset.set(true);
+  }
+
+  executeReset() {
     if (this.videoUrl()) {
       URL.revokeObjectURL(this.videoUrl()!);
     }
@@ -83,18 +106,21 @@ export class AppComponent {
     this.frames.set([]);
     this.currentTime.set(0);
     this.duration.set(0);
+    this.showConfirmReset.set(false);
+    this.showToast('Sessione resettata');
   }
 
   downloadSelected(format: 'png' | 'jpg') {
     const selected = this.frames().filter(f => f.selected);
     if (selected.length === 0) return;
 
-    selected.forEach((frame, index) => {
+    selected.forEach((frame) => {
       const link = document.createElement('a');
       link.href = frame.dataUrl;
       link.download = `frame_${frame.timestamp}ms.${format}`;
       link.click();
     });
+    this.showToast(`Download di ${selected.length} immagini avviato`);
   }
 
   async downloadSpriteSheet() {
@@ -103,12 +129,18 @@ export class AppComponent {
     if (targetFrames.length === 0) return;
 
     this.isExtracting.set(true);
-    const spriteSheet = await this.videoProcessor.createFullSpriteSheet(targetFrames, 128);
-    const link = document.createElement('a');
-    link.href = spriteSheet;
-    link.download = `spritesheet_128.png`;
-    link.click();
-    this.isExtracting.set(false);
+    try {
+      const spriteSheet = await this.videoProcessor.createFullSpriteSheet(targetFrames, 128);
+      const link = document.createElement('a');
+      link.href = spriteSheet;
+      link.download = `spritesheet_128.png`;
+      link.click();
+      this.showToast('Sprite Sheet generato con successo!');
+    } catch (e) {
+      this.showToast('Errore durante la creazione dello Sprite Sheet', 'error');
+    } finally {
+      this.isExtracting.set(false);
+    }
   }
 
   formatTime(time: number): string {
