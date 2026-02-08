@@ -5,7 +5,7 @@ import { VideoProcessorService, ExtractedFrame } from './services/video-processo
 
 interface Toast {
   message: string;
-  type: 'success' | 'error';
+  type: 'success' | 'info' | 'error';
   visible: boolean;
 }
 
@@ -33,11 +33,14 @@ export class AppComponent {
   
   @ViewChild('videoPlayer') videoPlayer!: ElementRef<HTMLVideoElement>;
 
-  showToast(message: string, type: 'success' | 'error' = 'success') {
+  showToast(message: string, type: 'success' | 'info' | 'error' = 'success') {
+    // Reset toast to trigger animation if one is already visible
     this.toast.set({ message, type, visible: true });
+    
+    // Auto-hide after 4 seconds for better readability
     setTimeout(() => {
       this.toast.update(t => ({ ...t, visible: false }));
-    }, 3000);
+    }, 4000);
   }
 
   handleFileUpload(event: Event) {
@@ -47,7 +50,7 @@ export class AppComponent {
       const url = URL.createObjectURL(file);
       this.videoUrl.set(url);
       this.frames.set([]);
-      this.showToast('Video caricato con successo!');
+      this.showToast('Ottimo! Video caricato e pronto per l\'analisi.', 'success');
     }
   }
 
@@ -69,12 +72,14 @@ export class AppComponent {
   async startExtraction() {
     if (!this.videoUrl()) return;
     this.isExtracting.set(true);
+    this.showToast('Analisi in corso: stiamo catturando i fotogrammi sequenziali...', 'info');
+    
     try {
       const result = await this.videoProcessor.extractFrames(this.videoUrl()!, this.intervalMs());
       this.frames.set(result);
-      this.showToast(`${result.length} fotogrammi estratti!`);
+      this.showToast(`Operazione completata! Abbiamo generato ${result.length} fotogrammi.`, 'success');
     } catch (err) {
-      this.showToast('Errore durante l\'estrazione', 'error');
+      this.showToast('Ops! Qualcosa è andato storto durante l\'estrazione.', 'error');
     } finally {
       this.isExtracting.set(false);
     }
@@ -88,6 +93,7 @@ export class AppComponent {
 
   selectAll() {
     this.frames.update(current => current.map(f => ({ ...f, selected: true })));
+    this.showToast('Tutti i fotogrammi sono stati selezionati per l\'esportazione.', 'info');
   }
 
   selectNone() {
@@ -107,12 +113,14 @@ export class AppComponent {
     this.currentTime.set(0);
     this.duration.set(0);
     this.showConfirmReset.set(false);
-    this.showToast('Sessione resettata');
+    this.showToast('Sessione pulita. Puoi caricare un nuovo video.', 'info');
   }
 
   downloadSelected(format: 'png' | 'jpg') {
     const selected = this.frames().filter(f => f.selected);
     if (selected.length === 0) return;
+
+    this.showToast(`Preparazione download: stiamo scaricando ${selected.length} file sul tuo dispositivo.`, 'info');
 
     selected.forEach((frame) => {
       const link = document.createElement('a');
@@ -120,7 +128,6 @@ export class AppComponent {
       link.download = `frame_${frame.timestamp}ms.${format}`;
       link.click();
     });
-    this.showToast(`Download di ${selected.length} immagini avviato`);
   }
 
   async downloadSpriteSheet() {
@@ -128,16 +135,18 @@ export class AppComponent {
     const targetFrames = selected.length > 0 ? selected : this.frames();
     if (targetFrames.length === 0) return;
 
+    this.showToast('Generazione Sprite Sheet: stiamo assemblando i fotogrammi in un\'unica mappa 128x128...', 'info');
     this.isExtracting.set(true);
+    
     try {
       const spriteSheet = await this.videoProcessor.createFullSpriteSheet(targetFrames, 128);
       const link = document.createElement('a');
       link.href = spriteSheet;
       link.download = `spritesheet_128.png`;
       link.click();
-      this.showToast('Sprite Sheet generato con successo!');
+      this.showToast('Il tuo Sprite Sheet è pronto e il download è stato avviato.', 'success');
     } catch (e) {
-      this.showToast('Errore durante la creazione dello Sprite Sheet', 'error');
+      this.showToast('Errore durante la creazione della mappa Sprite.', 'error');
     } finally {
       this.isExtracting.set(false);
     }
