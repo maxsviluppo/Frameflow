@@ -1,0 +1,5 @@
+{
+  "name": "FrameFlow 3D",
+  "description": "A modern 3D-styled video frame extractor. Import videos, set custom millisecond intervals, and export frames as PNG, JPG, or 128x128 Sprite Sheets. Designed for high-performance frame-by-frame precision without AI.",
+  "requestFramePermissions": []
+}
