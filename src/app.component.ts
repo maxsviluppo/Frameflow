@@ -75,6 +75,16 @@ export class AppComponent {
     this.frames.update(current => current.map(f => ({ ...f, selected: false })));
   }
 
+  reset() {
+    if (this.videoUrl()) {
+      URL.revokeObjectURL(this.videoUrl()!);
+    }
+    this.videoUrl.set(null);
+    this.frames.set([]);
+    this.currentTime.set(0);
+    this.duration.set(0);
+  }
+
   downloadSelected(format: 'png' | 'jpg') {
     const selected = this.frames().filter(f => f.selected);
     if (selected.length === 0) return;
