@@ -35,7 +35,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
               </svg>
             </div>
-            <p class="text-gray-400 font-medium">Carica Video (max 15s consig.)</p>
+            <p class="text-gray-400 font-medium text-center px-4">Carica il tuo video<br><span class="text-xs text-gray-500">(formati MP4, WebM supportati)</span></p>
           </div>
         } @else {
           <div class="relative rounded-2xl overflow-hidden shadow-2xl bg-black">
@@ -53,7 +53,7 @@
               <span>{{ formatTime(duration()) }}</span>
             </div>
             <div class="w-full h-1 bg-white/10 rounded-full overflow-hidden relative">
-              <div class="h-full bg-indigo-500" [style.width.%]="(currentTime() / duration()) * 100"></div>
+              <div class="h-full bg-indigo-500 transition-all duration-300" [style.width.%]="(currentTime() / duration()) * 100"></div>
             </div>
           </div>
         }
@@ -61,13 +61,16 @@
 
       <!-- Settings Card -->
       <div class="glass-panel rounded-3xl p-6 flex flex-col gap-6 tilt-card">
-        <h3 class="text-lg font-semibold text-white/90">Configurazione</h3>
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold text-white/90">Configurazione</h3>
+          <span class="text-[10px] text-indigo-400 font-mono">Partenza: 0.00s</span>
+        </div>
         
         <div class="space-y-4">
           <div>
             <label class="block text-sm text-gray-400 mb-2">Intervallo Estrazione (ms)</label>
             <div class="flex items-center gap-4">
-              <input type="range" min="100" max="2000" step="100" [value]="intervalMs()" (input)="updateInterval($event)"
+              <input type="range" min="50" max="2000" step="50" [value]="intervalMs()" (input)="updateInterval($event)"
                      class="flex-1 h-2 bg-indigo-900/50 rounded-lg appearance-none cursor-pointer accent-indigo-500">
               <span class="w-16 px-3 py-1 bg-indigo-500/20 text-indigo-300 rounded-lg text-sm font-mono text-center">
                 {{ intervalMs() }}ms
@@ -105,8 +108,8 @@
           </div>
           
           <div class="flex gap-2">
-            <button (click)="selectAll()" class="px-4 py-2 bg-white/5 hover:bg-white/10 text-xs rounded-xl transition-colors border border-white/5">Select All</button>
-            <button (click)="selectNone()" class="px-4 py-2 bg-white/5 hover:bg-white/10 text-xs rounded-xl transition-colors border border-white/5">Deselect</button>
+            <button (click)="selectAll()" class="px-4 py-2 bg-white/5 hover:bg-white/10 text-xs rounded-xl transition-colors border border-white/5">Seleziona Tutto</button>
+            <button (click)="selectNone()" class="px-4 py-2 bg-white/5 hover:bg-white/10 text-xs rounded-xl transition-colors border border-white/5">Deseleziona</button>
           </div>
         </div>
 
@@ -121,17 +124,25 @@
             </div>
           } @else {
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              @for (frame of frames(); track frame.id) {
+              @for (frame of frames(); track frame.id; let idx = $index) {
                 <div class="group relative aspect-square rounded-2xl overflow-hidden cursor-pointer border-2 transition-all"
                      [class.border-indigo-500]="frame.selected"
                      [class.border-white/5]="!frame.selected"
                      (click)="toggleSelect(frame.id)">
                   <img [src]="frame.dataUrl" class="w-full h-full object-cover transition-transform group-hover:scale-110" loading="lazy">
+                  
+                  <!-- Sequence Badge (UI Only - NOT Exported) -->
+                  <div class="absolute top-2 left-2 px-2.5 py-1 bg-indigo-600/90 backdrop-blur-md rounded-lg text-[10px] font-bold text-white shadow-lg border border-white/10">
+                    {{ idx + 1 }}
+                  </div>
+
+                  <!-- Overlay Info -->
                   <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
                     <span class="text-[10px] font-mono text-white/70">{{ frame.timestamp }}ms</span>
                   </div>
+
                   @if (frame.selected) {
-                    <div class="absolute top-2 right-2 w-6 h-6 bg-indigo-500 rounded-full flex items-center justify-center shadow-lg">
+                    <div class="absolute top-2 right-2 w-6 h-6 bg-indigo-500 rounded-full flex items-center justify-center shadow-lg animate-in zoom-in duration-200">
                       <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                       </svg>
@@ -170,9 +181,9 @@
     </div>
   </main>
 
-  <!-- Mobile Info Overlay (Optional) -->
+  <!-- Mobile Info Overlay -->
   <footer class="mt-12 text-center text-gray-500 text-xs">
-    <p>&copy; 2024 FrameFlow 3D • Privacy Oriented • Local Processing</p>
+    <p>&copy; 2024 FrameFlow 3D • Elaborazione Locale sicura</p>
   </footer>
 
   <!-- Modal/Toast-like Loading -->
@@ -187,7 +198,7 @@
         </div>
         <div>
           <h2 class="text-xl font-bold text-white mb-2">Analisi Video in Corso</h2>
-          <p class="text-gray-400 text-sm">Stiamo estraendo i fotogrammi con precisione millimetrica. Attendere prego...</p>
+          <p class="text-gray-400 text-sm">Estrazione dei fotogrammi in corso, partendo dal momento zero.</p>
         </div>
       </div>
     </div>

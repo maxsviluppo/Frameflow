@@ -20,6 +20,8 @@ export class VideoProcessorService {
       video.crossOrigin = 'anonymous';
       video.muted = true;
       video.playsInline = true;
+      // Force loading of enough data to render the first frame
+      video.preload = 'auto';
 
       video.onloadedmetadata = async () => {
         const duration = video.duration;
@@ -38,17 +40,22 @@ export class VideoProcessorService {
         let currentTime = 0;
         const intervalSec = intervalMs / 1000;
 
+        // Loop through the video duration
         while (currentTime <= duration) {
           video.currentTime = currentTime;
+          
           await new Promise(r => {
             const onSeeked = () => {
               video.removeEventListener('seeked', onSeeked);
-              r(null);
+              // Small delay to ensure the frame is actually decoded and ready for drawImage
+              // This fixes the "empty first frame" issue in many browsers
+              setTimeout(r, 40);
             };
             video.addEventListener('seeked', onSeeked);
           });
 
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          
           frames.push({
             id: Math.random().toString(36).substring(7),
             timestamp: Math.round(currentTime * 1000),
@@ -57,6 +64,9 @@ export class VideoProcessorService {
           });
 
           currentTime += intervalSec;
+          
+          // Safety break to prevent browser hang on extremely long videos
+          if (frames.length > 1000) break; 
         }
 
         resolve(frames);
@@ -66,39 +76,10 @@ export class VideoProcessorService {
     });
   }
 
-  generateSpriteSheet(frames: ExtractedFrame[], frameSize: number = 128): string {
-    const count = frames.length;
-    if (count === 0) return '';
-
-    const cols = Math.ceil(Math.sqrt(count));
-    const rows = Math.ceil(count / cols);
-
-    const canvas = document.createElement('canvas');
-    canvas.width = cols * frameSize;
-    canvas.height = rows * frameSize;
-    const ctx = canvas.getContext('2d');
-
-    if (!ctx) return '';
-
-    frames.forEach((frame, index) => {
-      const x = (index % cols) * frameSize;
-      const y = Math.floor(index / cols) * frameSize;
-      
-      const img = new Image();
-      img.src = frame.dataUrl;
-      // Note: In a real-world async scenario we'd wait for load, 
-      // but since dataUrls are already in memory, we can sync-draw if we manage carefully.
-      // For safety in this environment, we'll use a Promise-based batch draw.
-    });
-
-    // Simplified sprite sheet generation for this environment:
-    // We return a placeholder or implement the full logic if needed.
-    // Let's implement the async drawing logic correctly:
-    return canvas.toDataURL('image/png');
-  }
-
   async createFullSpriteSheet(frames: ExtractedFrame[], frameSize: number = 128): Promise<string> {
     const count = frames.length;
+    if (count === 0) return '';
+    
     const cols = Math.ceil(Math.sqrt(count));
     const rows = Math.ceil(count / cols);
 
@@ -107,12 +88,24 @@ export class VideoProcessorService {
     canvas.height = rows * frameSize;
     const ctx = canvas.getContext('2d');
     if (!ctx) return '';
+
+    // Transparent background
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     for (let i = 0; i < frames.length; i++) {
       const img = await this.loadImage(frames[i].dataUrl);
       const x = (i % cols) * frameSize;
       const y = Math.floor(i / cols) * frameSize;
-      ctx.drawImage(img, x, y, frameSize, frameSize);
+      
+      // Calculate fit (contain) inside the 128x128 cell
+      const ratio = Math.min(frameSize / img.width, frameSize / img.height);
+      const nw = img.width * ratio;
+      const nh = img.height * ratio;
+      const ox = x + (frameSize - nw) / 2;
+      const oy = y + (frameSize - nh) / 2;
+      
+      // Drawing strictly the image, no text/numbers added here
+      ctx.drawImage(img, ox, oy, nw, nh);
     }
 
     return canvas.toDataURL('image/png');
