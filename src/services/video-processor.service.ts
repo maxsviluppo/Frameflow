@@ -51,7 +51,14 @@ export class VideoProcessorService {
             video.addEventListener('seeked', onSeeked);
           });
 
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+
+          if (ctx) {
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          }
 
           frames.push({
             id: Math.random().toString(36).substring(7),
@@ -76,12 +83,22 @@ export class VideoProcessorService {
     const count = frames.length;
     if (count === 0) return '';
 
+    // Determinazione dimensioni frame finale
+    let finalWidth = frameSize;
+    let finalHeight = frameSize;
+
+    if (frameSize === 0) {
+      const firstImg = await this.loadImage(frames[0].dataUrl);
+      finalWidth = firstImg.width;
+      finalHeight = firstImg.height;
+    }
+
     const cols = Math.ceil(Math.sqrt(count));
     const rows = Math.ceil(count / cols);
 
     const canvas = document.createElement('canvas');
-    canvas.width = cols * frameSize;
-    canvas.height = rows * frameSize;
+    canvas.width = cols * finalWidth;
+    canvas.height = rows * finalHeight;
     const ctx = canvas.getContext('2d');
     if (!ctx) return '';
 
@@ -95,16 +112,20 @@ export class VideoProcessorService {
 
     for (let i = 0; i < frames.length; i++) {
       const img = await this.loadImage(frames[i].dataUrl);
-      const x = (i % cols) * frameSize;
-      const y = Math.floor(i / cols) * frameSize;
+      const x = (i % cols) * finalWidth;
+      const y = Math.floor(i / cols) * finalWidth;
 
-      const ratio = Math.min(frameSize / img.width, frameSize / img.height);
-      const nw = img.width * ratio;
-      const nh = img.height * ratio;
-      const ox = x + (frameSize - nw) / 2;
-      const oy = y + (frameSize - nh) / 2;
-
-      ctx.drawImage(img, ox, oy, nw, nh);
+      if (frameSize === 0) {
+        // Disegno a dimensione originale per massimizzare la nitidezza
+        ctx.drawImage(img, x, y);
+      } else {
+        const ratio = Math.min(finalWidth / img.width, finalHeight / img.height);
+        const nw = img.width * ratio;
+        const nh = img.height * ratio;
+        const ox = x + (finalWidth - nw) / 2;
+        const oy = y + (finalHeight - nh) / 2;
+        ctx.drawImage(img, ox, oy, nw, nh);
+      }
     }
 
     return canvas.toDataURL('image/png');

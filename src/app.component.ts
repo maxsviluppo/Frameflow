@@ -1,5 +1,5 @@
 
-import { Component, signal, computed, inject, ElementRef, ViewChild } from '@angular/core';
+import { Component, signal, computed, inject, ElementRef, ViewChild, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { VideoProcessorService, ExtractedFrame } from './services/video-processor.service';
 
@@ -47,7 +47,7 @@ export class AppComponent {
   private previewInterval: any = null;
 
   // Export Settings
-  spriteSize = signal<number>(128);
+  spriteSize = signal<number>(0);
   spriteBgColor = signal<string>('transparent');
 
   bgColors = [
@@ -58,6 +58,18 @@ export class AppComponent {
   ];
 
   selectedCount = computed(() => this.frames().filter(f => f.selected).length);
+  selectedFrames = computed(() => {
+    const selected = this.frames().filter(f => f.selected);
+    return selected.length > 0 ? selected : this.frames();
+  });
+
+  constructor() {
+    effect(() => {
+      // Re-start loop and generate preview when selection or interval changes
+      this.startPreviewLoop();
+      this.generatePreviewSheet();
+    });
+  }
 
   @ViewChild('videoPlayer') videoPlayer!: ElementRef<HTMLVideoElement>;
 
@@ -117,18 +129,25 @@ export class AppComponent {
 
   startPreviewLoop() {
     if (this.previewInterval) clearInterval(this.previewInterval);
-    if (this.frames().length === 0) return;
+    const targetFrames = this.selectedFrames();
+    if (targetFrames.length === 0) return;
+
+    // Reset index to avoid out of bounds when selection narrows
+    this.previewFrameIndex.set(0);
 
     this.previewInterval = setInterval(() => {
-      this.previewFrameIndex.update(i => (i + 1) % this.frames().length);
+      this.previewFrameIndex.update(i => (i + 1) % targetFrames.length);
     }, this.intervalMs());
   }
 
   async generatePreviewSheet() {
-    const frames = this.frames();
-    if (frames.length === 0) return;
+    const targetFrames = this.selectedFrames();
+    if (targetFrames.length === 0) {
+      this.spriteSheetPreview.set(null);
+      return;
+    };
     try {
-      const url = await this.videoProcessor.createFullSpriteSheet(frames, 64, this.spriteBgColor());
+      const url = await this.videoProcessor.createFullSpriteSheet(targetFrames, 64, this.spriteBgColor());
       this.spriteSheetPreview.set(url);
     } catch (e) {
       console.error('Preview generation failed', e);
