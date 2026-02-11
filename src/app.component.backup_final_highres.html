@@ -133,17 +133,9 @@
               <input type="range" min="16.7" max="2000" step="0.1" [value]="intervalMs()"
                 (input)="updateInterval($event)"
                 class="flex-1 h-2 bg-indigo-900/50 rounded-lg appearance-none cursor-pointer accent-indigo-500">
-              @if (isEditingInterval()) {
-              <input type="number" [value]="intervalMs()" (keydown)="handleManualInterval($event)"
-                (blur)="isEditingInterval.set(false)"
-                class="w-24 bg-indigo-500/30 text-indigo-100 rounded-lg text-sm font-mono text-center outline-none border border-indigo-500/50"
-                autofocus>
-              } @else {
-              <span (click)="toggleEditingInterval()"
-                class="w-24 px-3 py-1 bg-indigo-500/20 text-indigo-300 rounded-lg text-sm font-mono text-center cursor-pointer hover:bg-indigo-500/30 transition-colors">
+              <span class="w-20 px-3 py-1 bg-indigo-500/20 text-indigo-300 rounded-lg text-sm font-mono text-center">
                 {{ intervalMs() }}ms
               </span>
-              }
             </div>
           </div>
 
@@ -153,9 +145,7 @@
                 class="block text-sm text-gray-400 mb-2 text-[10px] uppercase font-bold opacity-50">Risoluzione</label>
               <select [value]="spriteSize()" (change)="spriteSize.set(+$any($event.target).value)"
                 class="w-full bg-indigo-950/40 border border-indigo-500/20 rounded-xl px-3 py-2 text-xs text-indigo-200 outline-none focus:border-indigo-500/50 transition-all cursor-pointer">
-                <option [value]="0">Qualità Originale (100%)</option>
-                <option [value]="1920">Full HD (1920px)</option>
-                <option [value]="1080">HD (1080px)</option>
+                <option [value]="0">Originale (Pixel Perfect)</option>
                 <option [value]="512">512px (Ultra)</option>
                 <option [value]="256">256px (High)</option>
                 <option [value]="128">128px (Std)</option>
@@ -317,7 +307,7 @@
               <path
                 d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
-            Sprite Sheet {{ spriteSize() === 0 ? 'Originale' : spriteSize() + 'px' }}
+            Sprite Sheet 128
           </button>
         </div>
       </div>

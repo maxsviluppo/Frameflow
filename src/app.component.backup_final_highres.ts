@@ -39,7 +39,6 @@ export class AppComponent {
 
   // UI States
   showConfirmReset = signal<boolean>(false);
-  isEditingInterval = signal<boolean>(false);
   toast = signal<Toast>({ message: '', type: 'success', visible: false });
 
   // Preview State
@@ -107,28 +106,7 @@ export class AppComponent {
 
   updateInterval(event: Event) {
     const val = (event.target as HTMLInputElement).value;
-    const num = parseFloat(val);
-    if (!isNaN(num)) {
-      this.intervalMs.set(num);
-    }
-  }
-
-  toggleEditingInterval() {
-    this.isEditingInterval.set(!this.isEditingInterval());
-  }
-
-  handleManualInterval(event: KeyboardEvent) {
-    if (event.key === 'Enter') {
-      const val = (event.target as HTMLInputElement).value;
-      const num = parseFloat(val);
-      if (!isNaN(num)) {
-        this.intervalMs.set(num);
-        this.isEditingInterval.set(false);
-        this.showToast(`Intervallo impostato a ${num}ms`, 'info');
-      }
-    } else if (event.key === 'Escape') {
-      this.isEditingInterval.set(false);
-    }
+    this.intervalMs.set(parseFloat(val) || 100);
   }
 
   async startExtraction() {
@@ -169,9 +147,7 @@ export class AppComponent {
       return;
     };
     try {
-      // Usiamo la dimensione selezionata per l'anteprima per mostrare la qualità effettiva
-      const previewSize = this.spriteSize();
-      const url = await this.videoProcessor.createFullSpriteSheet(targetFrames, previewSize, this.spriteBgColor());
+      const url = await this.videoProcessor.createFullSpriteSheet(targetFrames, 64, this.spriteBgColor());
       this.spriteSheetPreview.set(url);
     } catch (e) {
       console.error('Preview generation failed', e);

@@ -83,27 +83,14 @@ export class VideoProcessorService {
     const count = frames.length;
     if (count === 0) return '';
 
-    // Carichiamo la prima immagine per determinare l'aspect ratio
-    const firstImg = await this.loadImage(frames[0].dataUrl);
-    const aspectRatio = firstImg.width / firstImg.height;
-
     // Determinazione dimensioni frame finale
-    let finalWidth: number;
-    let finalHeight: number;
+    let finalWidth = frameSize;
+    let finalHeight = frameSize;
 
     if (frameSize === 0) {
-      // Qualità Originale
+      const firstImg = await this.loadImage(frames[0].dataUrl);
       finalWidth = firstImg.width;
       finalHeight = firstImg.height;
-    } else {
-      // Scala mantenendo l'aspect ratio, frameSize è la dimensione maggiore
-      if (aspectRatio >= 1) { // Landscape o Quadrato
-        finalWidth = frameSize;
-        finalHeight = Math.round(frameSize / aspectRatio);
-      } else { // Portrait
-        finalHeight = frameSize;
-        finalWidth = Math.round(frameSize * aspectRatio);
-      }
     }
 
     const cols = Math.ceil(Math.sqrt(count));
@@ -114,10 +101,6 @@ export class VideoProcessorService {
     canvas.height = rows * finalHeight;
     const ctx = canvas.getContext('2d');
     if (!ctx) return '';
-
-    // Massimizza la qualità della resa
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -130,10 +113,19 @@ export class VideoProcessorService {
     for (let i = 0; i < frames.length; i++) {
       const img = await this.loadImage(frames[i].dataUrl);
       const x = (i % cols) * finalWidth;
-      const y = Math.floor(i / cols) * finalHeight;
+      const y = Math.floor(i / cols) * finalWidth;
 
-      // Disegniamo l'immagine scalata perfettamente per riempire il frame calcolato
-      ctx.drawImage(img, x, y, finalWidth, finalHeight);
+      if (frameSize === 0) {
+        // Disegno a dimensione originale per massimizzare la nitidezza
+        ctx.drawImage(img, x, y);
+      } else {
+        const ratio = Math.min(finalWidth / img.width, finalHeight / img.height);
+        const nw = img.width * ratio;
+        const nh = img.height * ratio;
+        const ox = x + (finalWidth - nw) / 2;
+        const oy = y + (finalHeight - nh) / 2;
+        ctx.drawImage(img, ox, oy, nw, nh);
+      }
     }
 
     return canvas.toDataURL('image/png');
